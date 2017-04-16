@@ -34,7 +34,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between'
     },
     filters: {
-         flexDirection: 'row',
+        flexDirection: 'row',
     },
     filter: {
         padding: 8,
@@ -42,8 +42,8 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: 'transparent'
     },
-     selected: {
+    selected: {
         borderColor: 'rgba(175, 47,47, 0.2)'
-     }
+    }
 })
 export default Footer;

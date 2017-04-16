@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { View, Text, StyleSheet, Platform, TextInput, ListView, Keyboard, AsyncStorage } from 'react-native';
+import { View, Text, StyleSheet, Platform, TextInput, ListView, Keyboard, AsyncStorage, ActivityIndicator } from 'react-native';
 import Header from './header';
 import Footer from './footer';
 import Row from './row';
@@ -17,11 +17,14 @@ class App extends Component {
         const ds = new ListView.DataSource({ rowHasChanged: (r1, r2) => r1 !== r2 })
         this.state = {
             allComplete: false,
+            loading: true,
             value: '',
             items: [],
             dataSource: ds.cloneWithRows([]),
             filter: 'ALL'
         }
+        this.handleUpdateText = this.handleUpdateText.bind(this);
+        this.handleToggleEditing = this.handleToggleEditing.bind(this);
         this.handleClearComplete = this.handleClearComplete.bind(this);
         this.handleFilter = this.handleFilter.bind(this);
         this.handleRemoveItem = this.handleRemoveItem.bind(this);
@@ -41,18 +44,40 @@ class App extends Component {
         AsyncStorage.setItem('items', JSON.stringify(items));
     }
     componentWillMount() {
-        AsyncStorage.getItem('items').then((json)=> {
+        AsyncStorage.getItem('items').then((json) => {
             try {
                 const items = JSON.parse(json);
-                this.setSource(items, items);
-            } catch (e){
-
+                this.setSource(items, items, { loading: false });
+            } catch (e) {
+                this.setState({
+                    loading: false
+                })
             }
         })
     }
-    handleClearComplete(){
-         const newItems = filterItems('ACTIVE', this.state.items);
-         this.setSource(newItems, filterItems(this.state.filter, newItems));
+    handleUpdateText(key, text) {
+        const newItems = this.state.items.map((item) => {
+            if (item.key !== key) return item;
+            return {
+                ...item,
+                text
+            }
+        })
+        this.setSource(newItems, filterItems(this.state.filter, newItems));
+    }
+    handleToggleEditing(key, editing) {
+        const newItems = this.state.items.map((item) => {
+            if (item.key !== key) return item;
+            return {
+                ...item,
+                editing
+            }
+        })
+        this.setSource(newItems, filterItems(this.state.filter, newItems));
+    }
+    handleClearComplete() {
+        const newItems = filterItems('ACTIVE', this.state.items);
+        this.setSource(newItems, filterItems(this.state.filter, newItems));
 
     }
     handleFilter(filter) {
@@ -114,6 +139,8 @@ class App extends Component {
                             return (
                                 <Row
                                     key={key}
+                                    onUpdate={(text) => this.handleUpdateText(key, text)}
+                                    onToggleEditing={(editing) => this.handleToggleEditing(key, editing)}
                                     onRemove={() => this.handleRemoveItem(key)}
                                     onComplete={(complete) => this.handleToggleComplete(key, complete)}
                                     {...value}
@@ -129,10 +156,16 @@ class App extends Component {
                 <Footer
                     onFilter={this.handleFilter}
                     filter={this.state.filter}
-                    count= {filterItems('ACTIVE', this.state.items).length}
+                    count={filterItems('ACTIVE', this.state.items).length}
                     onClearComplete={this.handleClearComplete}
 
                 />
+                {this.state.loading && <View style={styles.loading}>
+                    <ActivityIndicator
+                        animating
+                        size='large'
+                    />
+                </View>}
             </View>
         );
     }
@@ -155,6 +188,16 @@ const styles = StyleSheet.create({
     separator: {
         borderWidth: 1,
         borderColor: '#F5F5F5'
+    },
+    loading: {
+        position: 'absolute',
+        left: 0,
+        top: 0,
+        right: 0,
+        bottom: 0,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: 'rgba(0,0,0,0.2)'
     }
 })
 
